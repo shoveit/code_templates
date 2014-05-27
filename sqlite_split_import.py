@@ -8,7 +8,7 @@ from subprocess import PIPE,Popen
 FILE_PATH = os.path.realpath(os.path.dirname(__file__))
 
 #------ usage
-def help():
+def usage():
 	print '''
 		Split file into in-RAM chunks & import into sqlite3 DB
 		Modify your own import_func.
@@ -18,19 +18,17 @@ def help():
 		'''
 
 #------ split file
-def split_import(filename,import_func,chunk_size_line=500000):
+def split_import(filename,import_func,chunk_size_line=100000):
 	chunk = []
 	with open(filename) as F:
 		for lineno, line in enumerate(F):
 			if lineno % chunk_size_line == 0:
 				if len(chunk)>0:
 					import_func(chunk)
-					print '%s has been imported\n' % chunk_size_line 
 					chunk = []
 			chunk.append(line.strip().decode('utf-8'))
 		if len(chunk)>0: #  final chunk
 			import_func(chunk)
-			print '%s has been imported\n' % chunk_size_line 
 
 #------ import_func defination, modify your own here
 def import_table(records):
@@ -42,7 +40,10 @@ def import_table(records):
 	placeholders = ','.join(('?',)*field_cnt)
 	import_sql_template = 'INSERT INTO %s VALUES (%s)' % (tablename,placeholders)
 	splitted = map(lambda x:tuple(x.split(separator)),records)	
+#	splitted = filter(lambda x:len(x) == field_cnt,splitted)
 	cur.executemany(import_sql_template,splitted)
+        print '%s has been imported\n' % len(splitted)
+
 
 if __name__ == "__main__":
 	#---------- initial
@@ -68,9 +69,11 @@ if __name__ == "__main__":
 	
 	if sqlite_db is None:
 		print "Pls specify a sqlite database"
+		usage()
 		sys.exit()
 	if len(args) == 0:
 		print "No input file"
+		usage()
 		sys.exit()
 	filename=args[0]
 
@@ -81,7 +84,7 @@ if __name__ == "__main__":
 	cur.execute('PRAGMA synchronous=0')
 	cur.execute('PRAGMA cache_size=1500000')
 
-        #-- split & import
+    #-- split & import
 	split_import(filename,import_table)
 	conn.commit()
 	conn.close()
