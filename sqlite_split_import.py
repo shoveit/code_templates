@@ -18,7 +18,7 @@ def usage():
 		'''
 
 #------ split file
-def split_import(filename,import_func,chunk_size_line=5000):
+def split_import(filename,import_func,chunk_size_line=50000):
 	chunk = []
 	with open(filename) as F:
 		for lineno, line in enumerate(F):
@@ -44,7 +44,6 @@ def import_table(records):
 	import_sql_template = 'INSERT INTO %s VALUES (%s)' % (tablename,placeholders)
 	splitted = map(lambda x:tuple(x.split(separator)),records)
 	splitted = filter(lambda x:len(x) == field_cnt,splitted)
-#debug:        print map(lambda x:len(x), splitted)
         cnt = 0
         for i in splitted:
             try:
