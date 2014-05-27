@@ -18,7 +18,7 @@ def usage():
 		'''
 
 #------ split file
-def split_import(filename,import_func,chunk_size_line=100000):
+def split_import(filename,import_func,chunk_size_line=5000):
 	chunk = []
 	with open(filename) as F:
 		for lineno, line in enumerate(F):
@@ -26,7 +26,10 @@ def split_import(filename,import_func,chunk_size_line=100000):
 				if len(chunk)>0:
 					import_func(chunk)
 					chunk = []
-			chunk.append(line.strip().decode('utf-8'))
+                        try:
+                            chunk.append(line.strip().decode('utf-8'))
+                        except:
+                            pass # decode error,shit just happens.
 		if len(chunk)>0: #  final chunk
 			import_func(chunk)
 
@@ -39,10 +42,17 @@ def import_table(records):
 	field_cnt = len(cur.execute('PRAGMA table_info(%s)' % tablename).fetchall())
 	placeholders = ','.join(('?',)*field_cnt)
 	import_sql_template = 'INSERT INTO %s VALUES (%s)' % (tablename,placeholders)
-	splitted = map(lambda x:tuple(x.split(separator)),records)	
-#	splitted = filter(lambda x:len(x) == field_cnt,splitted)
-	cur.executemany(import_sql_template,splitted)
-        print '%s has been imported\n' % len(splitted)
+	splitted = map(lambda x:tuple(x.split(separator)),records)
+	splitted = filter(lambda x:len(x) == field_cnt,splitted)
+#debug:        print map(lambda x:len(x), splitted)
+        cnt = 0
+        for i in splitted:
+            try:
+                cur.execute(import_sql_template,i)
+            except:
+                cnt +=1
+#only lucky:	cur.executemany(import_sql_template,splitted)
+        print '%i has been imported\n' % (len(splitted) - cnt)
 
 
 if __name__ == "__main__":
@@ -50,11 +60,7 @@ if __name__ == "__main__":
 	sqlite_db = None
 	separator = '\t'
 	#----------- opts parser
-	opts,args = getopt.getopt(
-		sys.argv[1:],
-		"hd:t:s:",
-		["help","db=","table=","separator="]
-		)
+	opts,args = getopt.getopt(sys.argv[1:], "hd:t:s:", ["help","db=","table=","separator="])
 		
 	for (k,v) in opts:
 		if k in ("-h","--help"):
@@ -84,7 +90,7 @@ if __name__ == "__main__":
 	cur.execute('PRAGMA synchronous=0')
 	cur.execute('PRAGMA cache_size=1500000')
 
-    #-- split & import
+        #-- split & import
 	split_import(filename,import_table)
 	conn.commit()
 	conn.close()
