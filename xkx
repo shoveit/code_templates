@@ -1,0 +1,40 @@
+#!/bin/bash
+help_msg="Usage: xkx -f inputfile -k keyword -a prefix_bit -b postfix_bit -t 50"
+contact="Contact: yuqiulin496@pingan.com"
+
+pre_bit=1
+post_bit=1
+top=500
+while getopts "f:k:a:b:t:" arg
+do
+	case $arg in 
+		f)
+#			echo "inputfile is $OPTARG"
+			input=$OPTARG
+			;;
+		k)
+#			echo "keyword is $OPTARG"
+			keyword=$OPTARG
+			;;
+		a)
+#			echo "prefix is $OPTARG"
+			pre_bit=$OPTARG
+			;;
+		b)
+#			echo "posfix is $OPTARG"
+			post_bit=$OPTARG
+			;;
+		t)
+#			echo "posfix is $OPTARG"
+			top=$OPTARG
+			;;
+		?)
+			echo $help_msg
+			echo $contact
+			exit 1
+			;;
+	esac
+done
+
+out_pattern="[^[:punct:]0-9a-zA-Z\\# 	]"
+grep -Eo "$out_pattern{$pre_bit}$keyword$out_pattern{$post_bit}"  $input |awk '{a[$0]++}END{for(i in a){print a[i],i}}'|sort -nr|head -n $top
