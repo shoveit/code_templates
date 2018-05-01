@@ -1,10 +1,8 @@
-# 0. perl
+# . perl
 perl -i -CD -pe 'tr/\x{feff}//d' *.txt
 
 # 1.
-awk '{if(NR==1)sub(/^\xef\xbb\xbf/,"");print}' $1 > t
-mv t $1
-
+awk '{if(NR==1)sub(/^\xef\xbb\xbf/,"");print}' $1 
 
 
 # 2. Gnu sed, Removing BOM from all text files in current directory:

@@ -51,12 +51,20 @@ class NN:
         for j in range(self.nh):
             for k in range(self.no):
                 self.wo[j][k] = rand(-2.0, 2.0)
+def makeMatrix(I, J, fill=0.0):
+    m = []
+    for i in range(I):
+        m.append([fill]*J)
+    return m
 
         # last change in weights for momentum   
         self.ci = makeMatrix(self.ni, self.nh)
         self.co = makeMatrix(self.nh, self.no)
 
     def update(self, inputs):
+        '''
+        forward process
+        '''
         if len(inputs) != self.ni-1:
             raise ValueError('wrong number of inputs')
 
@@ -92,6 +100,14 @@ class NN:
             error = targets[k]-self.ao[k]
             output_deltas[k] = dsigmoid(self.ao[k]) * error
 
+        # update output weights
+        for j in range(self.nh):
+            for k in range(self.no):
+                change = output_deltas[k]*self.ah[j]
+                self.wo[j][k] = self.wo[j][k] + N*change + M*self.co[j][k]
+                self.co[j][k] = change
+                #print N*change, M*self.co[j][k]
+
         # calculate error terms for hidden
         hidden_deltas = [0.0] * self.nh
         for j in range(self.nh):
@@ -100,13 +116,6 @@ class NN:
                 error = error + output_deltas[k]*self.wo[j][k]
             hidden_deltas[j] = dsigmoid(self.ah[j]) * error
 
-        # update output weights
-        for j in range(self.nh):
-            for k in range(self.no):
-                change = output_deltas[k]*self.ah[j]
-                self.wo[j][k] = self.wo[j][k] + N*change + M*self.co[j][k]
-                self.co[j][k] = change
-                #print N*change, M*self.co[j][k]
 
         # update input weights
         for i in range(self.ni):
@@ -135,7 +144,7 @@ class NN:
         for j in range(self.nh):
             print(self.wo[j])
 
-    def train(self, patterns, iterations=1000, N=0.5, M=0.1):
+    def train(self, patterns, iterations=10, N=0.5, M=0.1):
         # N: learning rate
         # M: momentum factor
         for i in range(iterations):
